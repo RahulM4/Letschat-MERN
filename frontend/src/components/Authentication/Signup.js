@@ -83,11 +83,12 @@ const Signup = () => {
     } catch (error) {
       setIsLoginDisabled(false);
       toast({
-        title: error.response.statusText,
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-        position: "bottom",
+       title: "Failed to Create Account",
+      description: error.response?.data?.message || "Something went wrong. Please try again.",
+      status: "error",
+      duration: 5000,
+      isClosable: true,
+      position: "bottom",
       });
     }
   };
