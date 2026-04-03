@@ -6,6 +6,8 @@ const sendJwtToekn = require("../appUtills/jwtToken");
 const cloudinary = require("cloudinary");
 const ErrorHandler = require("../appUtills/error");
 const userModel = require("../model/UserModel");
+const DEFAULT_PROFILE_PIC =
+  "https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg";
  
  
 
@@ -45,44 +47,79 @@ exports.allSearchUser = asyncWrapper(async (req, res) => {
 //@route           POST /api/user/
 //@access          Public
 exports.registerUser = asyncWrapper(async (req, res, next) => {
-  // cloudinary config for image upload to cloudinary server 
-
-
-  const myCloud = await cloudinary.v2.uploader.upload(req.body.pic, {
-    folder: "profile",
-    width: 150,
-    crop: "scale",
-  }); 
- 
-    
- 
-
   const { name, email, password } = req.body;
-  
+
   if (!name || !email || !password) {
     return next(new ErrorHandler("Please Enter all the Feilds", 400));
-  }   
+  }
 
   const userExits = await UserModel.findOne({ email });
- 
+
   if (userExits) {
     return next(new ErrorHandler("User already exists", 400));
+  }
+
+  let uploadedPic = DEFAULT_PROFILE_PIC;
+  if (req.body.pic) {
+    try {
+      const myCloud = await cloudinary.v2.uploader.upload(req.body.pic, {
+        folder: "profile",
+        width: 150,
+        crop: "scale",
+      });
+      uploadedPic = myCloud.secure_url;
+    } catch (cloudinaryError) {
+      console.error("Cloudinary upload failed:", cloudinaryError.message || cloudinaryError);
+      if (cloudinaryError?.message?.includes("Invalid signature")) {
+        return next(new ErrorHandler("File upload failed", 400));
+      }
+      // fallback to default avatar if upload fails for any reason
+    }
   }
 
   const user = await UserModel.create({
     name,
     password,
     email,
-    pic: myCloud.secure_url,
+    pic: uploadedPic,
   });
 
 
   if (user) {
-  sendJwtToekn(user, 201, res);
+    sendJwtToekn(user, 201, res);
   } else {
     console.log("error");
     return next(new ErrorHandler("Bad request", 400));
   }
+});
+
+
+exports.updateProfile = asyncWrapper(async (req, res, next) => {
+  const user = await UserModel.findById(req.user._id);
+  if (!user) {
+    return next(new ErrorHandler("User not found", 404));
+  }
+
+  const { name, bio } = req.body;
+  if (name) user.name = name;
+  if (bio !== undefined) user.bio = bio;
+
+  if (req.body.pic && req.body.pic !== user.pic) {
+    try {
+      const myCloud = await cloudinary.v2.uploader.upload(req.body.pic, {
+        folder: "profile",
+        width: 150,
+        crop: "scale",
+      });
+      user.pic = myCloud.secure_url;
+    } catch (uploadError) {
+      console.error("Profile image upload failed", uploadError);
+      return next(new ErrorHandler("Failed to update profile picture", 400));
+    }
+  }
+
+  await user.save();
+  sendJwtToekn(user, 200, res);
 });
 
 // >>>>>> login user <<<<<<<<

@@ -6,7 +6,7 @@ require("dotenv").config({path : "backend/appUtills/.env"});
 function connectDB() {
   mongoose
     .connect(process.env.DB_LINK)
-    .then(() => console.log("DB_CONNECTED"))
+    .then(() => console.log("Mongo Database has been connected successfully"))
     .catch((err) => console.log(`err ${err.message}`));
 }
 

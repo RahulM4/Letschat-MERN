@@ -10,6 +10,7 @@ import {
 } from "../config/ChatLogics";
 import { ChatState } from "../Context/ChatProvider";
 import React from "react";
+import "./styles.css";
 
 const ScrollableChat = ({ messages }) => {
   const { user } = ChatState();
@@ -17,37 +18,37 @@ const ScrollableChat = ({ messages }) => {
   return (
     <ScrollableFeed>
       {messages &&
-        messages.map((m, i) => (
-          <div style={{ display: "flex" }} key={m._id}>
-            {(isSameSender(messages, m, i, user._id) ||
-              isLastMessage(messages, i, user._id)) && (
-              <Tooltip label={m.sender.name} placement="bottom-start" hasArrow>
-                <Avatar
-                  mt="7px"
-                  mr={1}
-                  size="sm"
-                  cursor="pointer"
-                  name={m.sender.name}
-                  src={m.sender.pic}
-                />
-              </Tooltip>
-            )}
-            <span
-              style={{
-                backgroundColor: `${
-                  m.sender._id === user._id ? "#4D0099" : "#6600CC"
-                }`,
-                marginLeft: isSameSenderMargin(messages, m, i, user._id),
-                marginTop: isSameUser(messages, m, i, user._id) ? 3 : 10,
-                borderRadius: "20px",
-                padding: "5px 15px",
-                maxWidth: "75%",
-              }}
+        messages.map((m, i) => {
+          const isOwnMessage = m.sender._id === user._id;
+          return (
+            <div
+              className={`message-row ${isOwnMessage ? "own" : "other"}`}
+              key={m._id}
             >
-              {m.content}
-            </span>
-          </div>
-        ))}
+              {(isSameSender(messages, m, i, user._id) ||
+                isLastMessage(messages, i, user._id)) && (
+                <Tooltip label={m.sender.name} placement="bottom-start" hasArrow>
+                  <Avatar
+                    className="message-avatar"
+                    size="sm"
+                    cursor="pointer"
+                    name={m.sender.name}
+                    src={m.sender.pic}
+                  />
+                </Tooltip>
+              )}
+              <span
+                className={`message-bubble ${isOwnMessage ? "message-sent" : "message-received"}`}
+                style={{
+                  marginLeft: isSameSenderMargin(messages, m, i, user._id),
+                  marginTop: isSameUser(messages, m, i, user._id) ? 3 : 10,
+                }}
+              >
+                {m.content}
+              </span>
+            </div>
+          );
+        })}
     </ScrollableFeed>
   );
 };

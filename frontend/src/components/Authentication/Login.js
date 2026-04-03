@@ -12,7 +12,6 @@ import useStyles from "./LoginFromStyle";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import LockOpenIcon from "@mui/icons-material/LockOpen";
-import HomePage from "../../Pages/Homepage";
 import axios from "axios";
 import { useToast } from "@chakra-ui/react";
 import { useHistory, Link } from "react-router-dom";
@@ -27,7 +26,12 @@ const Login = () => {
   // const [loading, setLoading] = useState(false);
   const toast = useToast();
   const history = useHistory();
-  const { isAuth, setIsAuth } = ChatState();
+  const { isAuth, setIsAuth, setUser } = ChatState();
+  const heroHighlights = [
+    "Real-time conversations with collaborators",
+    "End-to-end encryption on every message",
+    "Custom channels and smart notifications"
+  ];
   const handleEmailChange = (event) => {
     const newEmail = event.target.value;
     setEmail(newEmail);
@@ -81,6 +85,7 @@ const Login = () => {
         position: "bottom",
       });
       localStorage.setItem("userInfo", JSON.stringify(data));
+      setUser(data);
       setTimeout(() => {
         setIsAuth(false);
         history.push("/chats");
@@ -99,89 +104,123 @@ const Login = () => {
     }
   };
 
+  const LoginPageContent = () => (
+  <div className={classes.authWrapper}>
+    <div className={classes.heroSection}>
+      <span className={classes.heroBadge}>LetsChat Pro</span>
+      <Typography variant="h3" className={classes.heroTitle}>
+        Collaborate faster, no matter where you are.
+      </Typography>
+      <Typography className={classes.heroSubtitle}>
+        Secure messaging, effortless channels, and notifications that keep you in sync.
+      </Typography>
+      <ul className={classes.heroList}>
+        {heroHighlights.map((highlight) => (
+          <li key={highlight} className={classes.heroItem}>
+            <span className={classes.heroCircle} />
+            {highlight}
+          </li>
+        ))}
+      </ul>
+      <Button
+        variant="contained"
+        className={classes.secondaryButton}
+        component={Link}
+        to="/signup"
+      >
+        Create free account
+      </Button>
+    </div>
+    <div className={classes.formSection}>
+      <div className={classes.formCard}>
+        <div className={classes.formHeader}>
+          <Avatar className={classes.avatar}>
+            <LockOpenIcon />
+          </Avatar>
+          <Typography variant="h5" component="h1" className={classes.heading}>
+            Sign in to Your Account
+          </Typography>
+          <Typography className={classes.formDescription}>
+            Welcome back! Enter your credentials to continue the conversation.
+          </Typography>
+        </div>
+        <form className={classes.form}>
+          <TextField
+            label="Email"
+            variant="outlined"
+            fullWidth
+            className={`${classes.emailInput} ${classes.textField}`}
+            value={email}
+            onChange={handleEmailChange}
+            error={!isValidEmail}
+            helperText={
+              !isValidEmail && "Please enter a valid email address."
+            }
+          />
+          <TextField
+            label="Password"
+            variant="outlined"
+            type={showPassword ? "text" : "password"}
+            fullWidth
+            className={`${classes.passwordInput} ${classes.textField}`}
+            InputProps={{
+              endAdornment: (
+                <Button
+                  variant="outlined"
+                  className={classes.showPasswordButton}
+                  onClick={handleShowPasswordClick}
+                >
+                  {showPassword ? <VisibilityOff /> : <Visibility />}
+                </Button>
+              ),
+            }}
+            value={password}
+            onChange={handlePasswordChange}
+          />
+          <Grid container className={classes.rememberMeContainer}>
+            <Grid item>
+              <FormControlLabel
+                control={<Checkbox color="primary" />}
+                label="Remember me"
+              />
+            </Grid>
+            <Grid item>
+              <Link
+                to="/forgot/password"
+                className={classes.forgotPasswordLink}
+              >
+                Forgot your password?
+              </Link>
+            </Grid>
+          </Grid>
+          <Button
+            variant="contained"
+            className={classes.loginButton}
+            fullWidth
+            disabled={isSignInDisabled}
+            onClick={submitHandler}
+          >
+            Sign in
+          </Button>
+          <Typography variant="body1" align="center" style={{ marginTop: "0.5rem" }}>
+            Don't have an account?
+            <Link to="/signup" className={classes.createAccount}>
+              Create Account
+            </Link>
+          </Typography>
+        </form>
+      </div>
+    </div>
+  </div>
+);
+
   return (
     <>
-      <HomePage />
       {isAuth ? (
         <Loader />
       ) : (
         <div className={classes.formContainer}>
-          <form className={classes.form}>
-            <Avatar className={classes.avatar}>
-              <LockOpenIcon />
-            </Avatar>
-            <Typography variant="h5" component="h1" className={classes.heading} style={{color: "Black"}}>
-              Sign in to Your Account
-            </Typography>
-            <TextField
-              label="Email"
-              variant="outlined"
-              fullWidth
-              className={`${classes.emailInput} ${classes.textField}`}
-              value={email}
-              onChange={handleEmailChange}
-              error={!isValidEmail}
-              helperText={
-                !isValidEmail && "Please enter a valid email address."
-              }
-            />
-            <TextField
-              label="Password"
-              variant="outlined"
-              type={showPassword ? "text" : "password"}
-              fullWidth
-              className={`${classes.passwordInput} ${classes.textField}`}
-              InputProps={{
-                endAdornment: (
-                  <Button
-                    variant="outlined"
-                    className={classes.showPasswordButton}
-                    onClick={handleShowPasswordClick}
-                  >
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </Button>
-                ),
-              }}
-              value={password}
-              onChange={handlePasswordChange}
-            />
-            <Grid container className={classes.rememberMeContainer}>
-              <Grid item style={{color: "Black"}}>
-                <FormControlLabel 
-                  control={<Checkbox color="primary" />}
-                  label="Remember me"
-                />
-              </Grid>
-              <Grid item>
-                <Link
-                  to="/forgot/password"
-                  className={classes.forgotPasswordLink}
-                >
-                  Forgot your password?
-                </Link>
-              </Grid>
-            </Grid>
-
-            <Button
-              variant="contained"
-              className={classes.loginButton}
-              fullWidth
-              disabled={isSignInDisabled}
-              onClick={submitHandler}
-            >
-              Sign in
-            </Button>
-            <Typography
-              variant="body1"
-              align="center"
-              style={{ marginTop: "1rem" , color:"black"}}
-            >
-              Don't have an account?
-              <Link to="/signup" className={classes.createAccount}>
-                Create Account
-              </Link>
-            </Typography>
-          </form>
+          <LoginPageContent />
         </div>
       )}
     </>

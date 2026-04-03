@@ -4,6 +4,7 @@ const messageModel = require("../model/MessageModel");
 const chatModel = require("../model/ChatModel");
 const ErrorHandler = require("../appUtills/error");
 const userModel = require("../model/UserModel");
+const NotificationModel = require("../model/NotificationModel");
 
 //@description     Get all Messages
 //@route           GET /api/Message/:chatId
@@ -55,6 +56,20 @@ exports.sendMessage = asyncWrapper(async (req, res, next) => {
     latestMessage: message,
   });
 
-    res.json(message);
+  const receivers = message.chat.users
+    .map((u) => u._id.toString())
+    .filter((uId) => uId !== req.user._id.toString());
+
+  if (receivers.length) {
+    const notifications = receivers.map((receiverId) => ({
+      receiver: receiverId,
+      sender: req.user._id,
+      chat: message.chat._id,
+      message: message.content,
+    }));
+    await NotificationModel.insertMany(notifications);
+  }
+
+  res.json(message);
 
 });

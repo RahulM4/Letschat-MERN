@@ -19,6 +19,7 @@ const sendJwtToekn = (userData, statusCode, res) => {
       email: userData.email,
       isAdmin: userData.isAdmin,
       pic: userData.pic,
+      bio: userData.bio || "",
       createdAt: userData.createdAt,
     });
 

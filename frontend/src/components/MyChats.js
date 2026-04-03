@@ -1,41 +1,26 @@
-// import { AddIcon } from "@chakra-ui/icons";
-import { Box, Stack, Text } from "@chakra-ui/layout";
+// @ts-nocheck
+import { Box, Stack, Text, Flex } from "@chakra-ui/layout";
 import { useToast } from "@chakra-ui/toast";
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { getSender } from "../config/ChatLogics";
 import ChatLoading from "./ChatLoading";
 import GroupChatModal from "./miscellaneous/GroupChatModal";
-import { Button } from "@chakra-ui/react";
+import { Button, Avatar } from "@chakra-ui/react";
 import { ChatState } from "../Context/ChatProvider";
+import "./styles.css";
 
 const MyChats = ({ fetchAgain }) => {
   const [loggedUser, setLoggedUser] = useState();
-
   const { selectedChat, setSelectedChat, chats, setChats } = ChatState();
-
   const toast = useToast();
 
   const fetchChats = async () => {
-    // console.log(user._id);
     try {
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      };
-
-      const { data } = await axios.get("/api/chat", config);
+      const { data } = await axios.get("/api/chat", { headers: { "Content-Type": "application/json" } });
       setChats(data);
     } catch (error) {
-      toast({
-        title: "Error Occured!",
-        description: "Failed to Load the chats",
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-        position: "bottom-left",
-      });
+      toast({ title: "Failed to load chats", status: "error", duration: 4000, isClosable: true, position: "bottom-left" });
     }
   };
 
@@ -45,80 +30,78 @@ const MyChats = ({ fetchAgain }) => {
     // eslint-disable-next-line
   }, [fetchAgain]);
 
+  // Generate a colour from a string for avatar fallback
+  const getAvatarBg = (name = "") => {
+    const colors = ["#00d4d8", "#a8ff78", "#7c6fff", "#ff7eb3", "#ffa94d"];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    return colors[Math.abs(hash) % colors.length];
+  };
+
   return (
-    <Box
-      d={{ base: selectedChat ? "none" : "flex", md: "flex" }}
-      flexDir="column"
-      alignItems="center"
-      p={3}
-      bg="#28293D"
-      w={{ base: "100%", md: "31%" }}
-      borderRadius="lg"
-      borderWidth="2px"
-      borderColor="#555770"
-    >
-      <Box
-        pb={1}
-        px={3}
-        fontSize={{ base: "28px", md: "30px" }}
-        fontFamily="Work Sans"
-        d="flex"
-        w="100%"
-        justifyContent="space-between"
-        alignItems="center"
-        color="#E4E4EB"
-        borderRadius="md"
-        boxShadow="2px 2px 4px rgba(0, 0, 0, 0.5)"
-        background="#1C1C28"
-      >
-        <Box fontWeight="bold" textShadow="3px 3px 6px rgba(0, 0, 0, 0.5)">
-          All Chats
+    <Box className="chat-panel chat-sidebar" display="flex" flexDir="column" alignItems="stretch" h="100%">
+      {/* Header */}
+      <Box className="chat-panel-header">
+        <Box>
+          <Text className="chat-panel-title">Messages</Text>
+          <Text className="chat-panel-subtitle">Your conversations</Text>
         </Box>
         <GroupChatModal>
-          <Button style={{ color: "black" }}>Make Group</Button>
+          <Button className="chat-panel-action">+ Group</Button>
         </GroupChatModal>
       </Box>
-      ;
-      <Box
-        d="flex"
-        flexDir="column"
-        p={3}
-        background="#1C1C28"
-        w="100%"
-        h="100%"
-        borderRadius="lg"
-        overflowY="hidden"
-        boxShadow="2px 2px 4px rgba(0, 0, 0, 0.5)"
-      >
-        {chats ? (
-          <Stack overflowY="scroll">
-            {chats.map((chat) => (
-              <Box
-                onClick={() => setSelectedChat(chat)}
-                cursor="pointer"
-                bg={selectedChat === chat ? "#6600CC" : "#555770"}
-                color={selectedChat === chat ? "#E4E4EB" : "#F2F2F5"}
-                px={3}
-                py={2}
-                borderRadius="lg"
-                key={chat._id}
-                boxShadow="2px 2px 4px rgba(0, 0, 0, 0.5)"
-              >
-                <Text>
-                  {!chat.isGroupChat
-                    ? getSender(loggedUser, chat.users)
-                    : chat.chatName}
-                </Text>
-                {chat.latestMessage && (
-                  <Text fontSize="xs">
-                    <b>{chat.latestMessage.sender.name} : </b>
-                    {chat.latestMessage.content.length > 50
-                      ? chat.latestMessage.content.substring(0, 51) + "..."
-                      : chat.latestMessage.content}
-                  </Text>
-                )}
+
+      {/* Chat list */}
+      <Box className="chat-panel-body">
+        {chats && loggedUser ? (
+          <Stack className="chat-list" spacing="0">
+            {chats.length === 0 && (
+              <Box textAlign="center" py="40px">
+                <Text fontSize="0.85rem" color="rgba(240,242,255,0.3)">No conversations yet</Text>
+                <Text fontSize="0.75rem" color="rgba(240,242,255,0.2)" mt="4px">Search for users to start chatting</Text>
               </Box>
-            ))}
+            )}
+            {chats.map((chat) => {
+              const chatName = !chat.isGroupChat
+                ? getSender(loggedUser, chat.users || [])
+                : chat.chatName;
+              const isSelected = selectedChat?._id === chat._id;
+
+              return (
+                <Box
+                  key={chat._id}
+                  onClick={() => setSelectedChat(chat)}
+                  className={`chat-row ${isSelected ? "selected" : ""}`}
+                >
+                  <Flex align="center" gap="12px">
+                    <Avatar
+                      size="sm"
+                      name={chatName}
+                      w="38px" h="38px"
+                      flexShrink={0}
+                      bg={getAvatarBg(chatName)}
+                      color="#071014"
+                      fontWeight="700"
+                      fontSize="0.8rem"
+                    />
+                    <Box flex="1" minW="0">
+                      <Text className="chat-row-title" noOfLines={1}>{chatName}</Text>
+                      {chat.latestMessage && (
+                        <Text className="chat-row-preview" noOfLines={1}>
+                          {chat.latestMessage.sender?.name?.split(" ")[0]}: {chat.latestMessage.content.length > 38
+                            ? chat.latestMessage.content.substring(0, 38) + "…"
+                            : chat.latestMessage.content}
+                        </Text>
+                      )}
+                    </Box>
+                    {/* Unread indicator dot placeholder */}
+                    {isSelected && (
+                      <Box w="7px" h="7px" borderRadius="50%" bg="#00d4d8" flexShrink={0} boxShadow="0 0 8px rgba(0,212,216,0.6)" />
+                    )}
+                  </Flex>
+                </Box>
+              );
+            })}
           </Stack>
         ) : (
           <ChatLoading />

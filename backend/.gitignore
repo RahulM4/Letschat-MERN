@@ -7,7 +7,7 @@
 /backend/utills/.env
 # testing
 /coverage
-
+.env
 
 .DS_Store
 .env.local

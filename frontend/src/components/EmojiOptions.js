@@ -254,7 +254,7 @@ const EmojiOptions = ({ handleEmojiClick }) => {
   };
 
   return (
-    <div style={{ backgroundColor: "#28293D" }}>
+    <div style={{ backgroundColor: "#222831", padding: "10px", borderRadius: "18px" }}>
       {showOptions && ( // Render the emoji options only when showOptions is true
         <>
           {emojis.map((emoji, index) => (
@@ -273,5 +273,4 @@ const EmojiOptions = ({ handleEmojiClick }) => {
 };
 
 export default EmojiOptions;
-
 

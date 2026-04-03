@@ -1,6 +1,5 @@
 // @ts-nocheck
 import React, { useState } from "react";
-import HomePage from "../../Pages/Homepage";
 import {
   Avatar,
   Button,
@@ -22,7 +21,7 @@ const Signup = () => {
   const classes = useStyles();
   const toast = useToast();
   const history = useHistory();
-  const { setIsAuth } = ChatState();
+  const { setIsAuth, setUser } = ChatState();
   const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -34,6 +33,11 @@ const Signup = () => {
   const [pic, setPic] = useState("");
   const [picLoading, setPicLoading] = useState(false);
   const [isLoginDisabled, setIsLoginDisabled] = useState(false);
+  const heroHighlights = [
+    "Verified communities stay locked down",
+    "Instant team spaces ready in seconds",
+    "Advanced privacy + notification controls"
+  ];
 
   const submitHandler = async () => {
     setIsLoginDisabled(true);
@@ -76,6 +80,7 @@ const Signup = () => {
         localStorage.setItem("userInfo", JSON.stringify(data));
         setIsLoginDisabled(false);
         setIsAuth(true);
+        setUser(data);
         setIsAuth(true);
       }
 
@@ -136,131 +141,158 @@ const Signup = () => {
   );
   return (
     <>
-      <HomePage />
-
       {picLoading || isLoginDisabled ? (
         <Loader />
       ) : (
         <div className={classes.formContainer}>
-          <form className={classes.form}>
-            <Avatar className={classes.avatar}>
-              <LockOutlinedIcon />
-            </Avatar>
-            <Typography variant="h5" component="h1" className={classes.heading} style={{color: "Black"}}>
-              Sign Up to Your Account
-            </Typography>
-              <TextField 
-              label="Name"
-              variant="outlined"
-              fullWidth
-              className={`${classes.nameInput} ${classes.textField}`}
-              value={name}
-                onChange={handleNameChange}
-                
-            />
-
-            <TextField
-              label="Email"
-              variant="outlined"
-              fullWidth
-              className={`${classes.emailInput} ${classes.textField}`}
-              value={email}
-              onChange={handleEmailChange}
-              error={!isValidEmail}
-              helperText={
-                !isValidEmail && "Please enter a valid email address."
-              }
-            />
-            <TextField
-              label="Password"
-              variant="outlined"
-              type={showPassword ? "text" : "password"}
-              fullWidth
-              className={`${classes.passwordInput} ${classes.textField}`}
-              InputProps={{
-                endAdornment: (
-                  <Button
-                    variant="outlined"
-                    className={classes.showPasswordButton}
-                    onClick={handleShowPasswordClick}
-                  >
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </Button>
-                ),
-              }}
-              value={password}
-              onChange={handlePasswordChange}
-            />
-              <TextField
-                
-              label="Confirm Password"
-              variant="outlined"
-              type={showPassword ? "text" : "password"}
-              fullWidth
-              className={`${classes.passwordInput} ${classes.textField}`}
-              InputProps={{
-                endAdornment: (
-                  <Button
-                    variant="outlined"
-                    className={classes.showPasswordButton}
-                    onClick={handleShowPasswordClick}
-                  >
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </Button>
-                ),
-              }}
-              value={confirmPassword}
-              onChange={handleConfirmPasswordChange}
-            />
-
-              <div className={classes.root} style={{color: "Black"}}>
-                <h1>Upload Your Profile Picture ➡️</h1>
-               
-              <input
-                accept="image/*"
-                className={classes.input}
-                id="avatar-input"
-                type="file"
-                onChange={handleAvatarChange}
-              />
-                <label htmlFor="avatar-input" >
-                  
-                <Button
-                  variant="contained"
-                    color="default"
-                    
-                  startIcon={<CloudUploadIcon style={{ color: "#FFFFFF" }} />}
-                  component="span"
-                  className={classes.button}
-                  >
-                   
-                  <Typography variant="subtitle1">Upload</Typography>
-                </Button>
-              </label>
+          <div className={classes.authWrapper}>
+            <div className={classes.heroSection}>
+              <span className={classes.heroBadge}>Create LetsChat</span>
+              <Typography variant="h3" className={classes.heroTitle}>
+                Bring your teams together with clarity.
+              </Typography>
+              <Typography className={classes.heroSubtitle}>
+                Fast onboarding, thoughtful permissions, and a space built for real conversations.
+              </Typography>
+              <ul className={classes.heroList}>
+                {heroHighlights.map((highlight) => (
+                  <li key={highlight} className={classes.heroItem}>
+                    <span className={classes.heroCircle} />
+                    {highlight}
+                  </li>
+                ))}
+              </ul>
+              <Button
+                variant="contained"
+                className={classes.secondaryButton}
+                component={Link}
+                to="/"
+              >
+                Already a member
+              </Button>
             </div>
-
-           
-       
-            <Button
-              variant="contained"
-              className={classes.loginButton}
-              fullWidth
-              disabled={isSignInDisabled}
-              onClick={submitHandler}
-            >
-              Create Account
-            </Button>
-            <Typography
-              variant="body1"
-              align="center"
-              style={{ marginTop: "1rem", color :"black" }}
-            >
-              Already have an account?
-              <Link to="/" className={classes.createAccount}>
-                Login
-              </Link>
-            </Typography>
-          </form>
+            <div className={classes.formSection}>
+              <div className={classes.formCard}>
+                <div className={classes.formHeader}>
+                  <Avatar className={classes.avatar}>
+                    <LockOutlinedIcon />
+                  </Avatar>
+                  <Typography variant="h5" component="h1" className={classes.heading}>
+                    Sign Up to Your Account
+                  </Typography>
+                  <Typography className={classes.formDescription}>
+                    Start chatting securely with your peers in minutes.
+                  </Typography>
+                </div>
+                <form className={classes.form}>
+                  <TextField
+                    label="Name"
+                    variant="outlined"
+                    fullWidth
+                    className={`${classes.nameInput} ${classes.textField}`}
+                    value={name}
+                    onChange={handleNameChange}
+                  />
+                  <TextField
+                    label="Email"
+                    variant="outlined"
+                    fullWidth
+                    className={`${classes.emailInput} ${classes.textField}`}
+                    value={email}
+                    onChange={handleEmailChange}
+                    error={!isValidEmail}
+                    helperText={
+                      !isValidEmail && "Please enter a valid email address."
+                    }
+                  />
+                  <TextField
+                    label="Password"
+                    variant="outlined"
+                    type={showPassword ? "text" : "password"}
+                    fullWidth
+                    className={`${classes.passwordInput} ${classes.textField}`}
+                    InputProps={{
+                      endAdornment: (
+                        <Button
+                          variant="outlined"
+                          className={classes.showPasswordButton}
+                          onClick={handleShowPasswordClick}
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </Button>
+                      ),
+                    }}
+                    value={password}
+                    onChange={handlePasswordChange}
+                  />
+                  <TextField
+                    label="Confirm Password"
+                    variant="outlined"
+                    type={showPassword ? "text" : "password"}
+                    fullWidth
+                    className={`${classes.passwordInput} ${classes.textField}`}
+                    InputProps={{
+                      endAdornment: (
+                        <Button
+                          variant="outlined"
+                          className={classes.showPasswordButton}
+                          onClick={handleShowPasswordClick}
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </Button>
+                      ),
+                    }}
+                    value={confirmPassword}
+                    onChange={handleConfirmPasswordChange}
+                  />
+                  <div className={classes.uploadWrapper}>
+                    <Typography variant="subtitle2" className={classes.uploadLabel}>
+                      Upload your profile picture
+                    </Typography>
+                    <input
+                      accept="image/*"
+                      className={classes.input}
+                      id="avatar-input"
+                      type="file"
+                      onChange={handleAvatarChange}
+                    />
+                    <label htmlFor="avatar-input" className={classes.uploadLabel}>
+                      <Button
+                        variant="contained"
+                        startIcon={<CloudUploadIcon />}
+                        component="span"
+                        className={classes.button}
+                      >
+                        Choose file
+                      </Button>
+                    </label>
+                    {picPreview && (
+                      <img
+                        src={picPreview}
+                        alt="Avatar preview"
+                        className={classes.avatarPreview}
+                      />
+                    )}
+                  </div>
+                  <Button
+                    variant="contained"
+                    className={classes.loginButton}
+                    fullWidth
+                    disabled={isSignInDisabled}
+                    onClick={submitHandler}
+                  >
+                    Create Account
+                  </Button>
+                  <Typography variant="body1" align="center" style={{ marginTop: "0.5rem" }}>
+                    Already have an account?
+                    <Link to="/" className={classes.createAccount}>
+                      Login
+                    </Link>
+                  </Typography>
+                </form>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </>

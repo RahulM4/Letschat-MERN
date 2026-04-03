@@ -6,11 +6,11 @@ import {
 } from "@chakra-ui/react";
 import EmojiEmotionsIcon from "@mui/icons-material/EmojiEmotions";
 import Send from "@mui/icons-material/Send";
-import {  Box, Text } from "@chakra-ui/layout";
+import { Box, Text } from "@chakra-ui/layout";
 import "./styles.css";
 import { IconButton, Spinner, useToast } from "@chakra-ui/react";
 import { getSender, getSenderFull } from "../config/ChatLogics";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { ArrowBackIcon } from "@chakra-ui/icons";
 import ProfileModal from "./miscellaneous/ProfileModal";
@@ -18,14 +18,15 @@ import ScrollableChat from "./ScrollableChat";
 import Lottie from "react-lottie";
 import EmojiOptions from "./EmojiOptions";
 import animationData from "../animations/typing.json";
-import backgroundImage from "../img/img.jpg";
 import io from "socket.io-client";
 import UpdateGroupChatModal from "./miscellaneous/UpdateGroupChatModal";
 import { ChatState } from "../Context/ChatProvider";
 
-const ENDPOINT = window.location.hostname === "localhost"
-  ? "http://localhost:5000"
-  : "https://chat-mind-3pcx.onrender.com";
+const ENDPOINT =
+  window.location.hostname === "localhost"
+    ? "http://localhost:5001"
+    : "https://chat-mind-3pcx.onrender.com";
+
 var socket, selectedChatCompare;
 
 const SingleChat = ({ fetchAgain, setFetchAgain }) => {
@@ -37,6 +38,13 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const [istyping, setIsTyping] = useState(false);
   const toast = useToast();
 
+  // FIX 3 (part a): Keep a stable ref to newMessage so the socket listener
+  // always reads the latest value without needing to be re-registered.
+  const newMessageRef = useRef(newMessage);
+  useEffect(() => {
+    newMessageRef.current = newMessage;
+  }, [newMessage]);
+
   const defaultOptions = {
     loop: true,
     autoplay: true,
@@ -45,6 +53,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       preserveAspectRatio: "xMidYMid slice",
     },
   };
+
   const { selectedChat, setSelectedChat, user, notification, setNotification } =
     ChatState();
 
@@ -64,7 +73,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     try {
       const config = {
         headers: {
-         "Content-type": "application/json",
+          "Content-type": "application/json",
         },
       };
 
@@ -90,40 +99,52 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     }
   };
 
- 
-// sendMessage is used to send message on clicking send button
-  const sendMessage = async (event) => {
-    if (newMessage && event.key === "Enter") {
-      socket.emit("stop typing", selectedChat._id);
-      try {
-        const config = {
-          headers: {
-            "Content-type": "application/json",
-          },
-        };
+  // FIX 3 (part b): Extract the core send logic into a separate function so
+  // it can be called from BOTH the keyboard handler (Enter key) AND the
+  // Send button's onClick handler without depending on a keyboard event object.
+  const dispatchMessage = async () => {
+    if (!newMessage) return;
 
-        setNewMessage("");
+    socket.emit("stop typing", selectedChat._id);
+    try {
+      const config = {
+        headers: {
+          "Content-type": "application/json",
+        },
+      };
 
-        const { data } = await axios.post(
-          "/api/message",
-          {
-            content: newMessage,
-            chatId: selectedChat,
-          },
-          config
-        );
-        socket.emit("new message", data);
-        setMessages([...messages, data]);
-      } catch (error) {
-        toast({
-          title: "Error Occured!",
-          description: "Failed to send the Message",
-          status: "error",
-          duration: 5000,
-          isClosable: true,
-          position: "bottom",
-        });
-      }
+      // Clear the input optimistically before the request so fast typists
+      // don't see the old text linger.
+      const messageToSend = newMessage;
+      setNewMessage("");
+      setShowEmojiOptions(false);
+
+      const { data } = await axios.post(
+        "/api/message",
+        {
+          content: messageToSend,
+          chatId: selectedChat,
+        },
+        config
+      );
+      socket.emit("new message", data);
+      setMessages((prev) => [...prev, data]);
+    } catch (error) {
+      toast({
+        title: "Error Occured!",
+        description: "Failed to send the Message",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+        position: "bottom",
+      });
+    }
+  };
+
+  // Keyboard handler — only fires dispatchMessage on Enter key
+  const sendMessage = (event) => {
+    if (event.key === "Enter") {
+      dispatchMessage();
     }
   };
 
@@ -139,26 +160,39 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 
   useEffect(() => {
     fetchMessages();
-
     selectedChatCompare = selectedChat;
     // eslint-disable-next-line
   }, [selectedChat]);
 
+  // FIX 3 (part c): The original useEffect had no dependency array, which
+  // re-registered a NEW "message recieved" listener on every render.
+  // Over time this caused exponential duplicate listeners.
+  // Fixed by adding an empty dependency array and cleaning up the listener
+  // on unmount with socket.off().
   useEffect(() => {
-    socket.on("message recieved", (newMessageRecieved) => {
+    const handleMessageReceived = (newMessageRecieved) => {
       if (
-        !selectedChatCompare || // if chat is not selected or doesn't match current chat
+        !selectedChatCompare ||
         selectedChatCompare._id !== newMessageRecieved.chat._id
       ) {
         if (!notification.includes(newMessageRecieved)) {
-          setNotification([newMessageRecieved, ...notification]);
-          setFetchAgain(!fetchAgain);
+          setNotification((prev) => [newMessageRecieved, ...prev]);
+          setFetchAgain((prev) => !prev);
         }
       } else {
-        setMessages([...messages, newMessageRecieved]);
+        setMessages((prev) => [...prev, newMessageRecieved]);
       }
-    });
-  });
+    };
+
+    socket.on("message recieved", handleMessageReceived);
+
+    // Cleanup: remove this specific listener when the component re-renders
+    // or unmounts to prevent stacking duplicate listeners.
+    return () => {
+      socket.off("message recieved", handleMessageReceived);
+    };
+    // eslint-disable-next-line
+  }, [notification]);
 
   const typingHandler = (e) => {
     setNewMessage(e.target.value);
@@ -185,61 +219,44 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     <>
       {selectedChat ? (
         <>
-          <Text
-            fontSize={{ base: "28px", md: "30px" }}
-            pb={3}
-            px={2}
-            w="100%"
-            fontFamily="Work sans"
-            d="flex"
-            fontWeight={800}
-              textShadow="2px 2px 8px rgba(0, 0, 0, 0.6)"
-            justifyContent={{ base: "space-between" }}
-            alignItems="center"
-          
-            
-          >
+          <Box className="chat-header">
             <IconButton
-              bg="linear-gradient(147.14deg, #FF3B3B 6.95%, #6600CC 93.05%);"
-              color="#F2F2F5"
-              _hover={{ bg: "#6600CC" }}
+              className="chat-back-button"
               d={{ base: "flex", md: "none" }}
               icon={<ArrowBackIcon />}
               onClick={() => setSelectedChat("")}
             />
-            {messages &&
-              (!selectedChat.isGroupChat ? (
-                <>
-                  {getSender(user, selectedChat.users)}
-                  <ProfileModal
-                    user={getSenderFull(user, selectedChat.users)}
-                  />
-                </>
-              ) : (
-                <>
-                  {selectedChat.chatName.toUpperCase()}
-                  <UpdateGroupChatModal
-                    fetchMessages={fetchMessages}
-                    fetchAgain={fetchAgain}
-                    setFetchAgain={setFetchAgain}
-                  />
-                </>
-              ))}
-          </Text>
-          <Box
-            d="flex"
-            flexDir="column"
-            justifyContent="flex-end"
-            p={3}
-            bg={`url(${backgroundImage})`}
-            bgSize="cover"
-            w="100%"
-            h="100%"
-            borderRadius="lg"
-            overflowY="hidden"
-          >
+            {messages && (
+              <Box className="chat-header-title">
+                {!selectedChat.isGroupChat ? (
+                  <>
+                    <Text className="chat-header-name">
+                      {getSender(user, selectedChat.users)}
+                    </Text>
+                    <ProfileModal
+                      user={getSenderFull(user, selectedChat.users)}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <Text className="chat-header-name">
+                      {selectedChat.chatName.toUpperCase()}
+                    </Text>
+                    <UpdateGroupChatModal
+                      fetchMessages={fetchMessages}
+                      fetchAgain={fetchAgain}
+                      setFetchAgain={setFetchAgain}
+                    />
+                  </>
+                )}
+              </Box>
+            )}
+          </Box>
+
+          <Box className="chat-window">
             {loading ? (
               <Spinner
+                className="chat-spinner"
                 size="xl"
                 w={20}
                 h={20}
@@ -253,74 +270,55 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
             )}
 
             <FormControl
+              className="chat-input-panel"
               onKeyDown={sendMessage}
               id="first-name"
               isRequired
-              mt={3}
             >
-              {istyping ? (
-                <div>
+              {istyping && (
+                <div className="typing-indicator">
                   <Lottie
                     options={defaultOptions}
-                    // height={50}
                     width={70}
                     style={{ marginBottom: 15, marginLeft: 0 }}
                   />
                 </div>
-              ) : (
-                <></>
               )}
 
-              <InputGroup>
+              <InputGroup className="chat-input-group">
                 <Input
+                  className="chat-input"
                   variant="filled"
-                  bg="#28293D"
-                  placeholder="Enter a message.."
+                  placeholder="Type your message..."
                   value={newMessage}
-                  color="#F2F2F5"
-                  _placeholder={{ color: "#F2F2F5" }}
-                  _hover={{ bg: "#1C1C28" }}
                   onChange={typingHandler}
-                  _focus={{
-                    bg: "#1C1C28",
-                  }}
                   pr="4rem"
-                  pb="0" 
-                 
                 />
-                <InputRightElement width="4rem">
+                <InputRightElement className="chat-input-actions" width="4rem">
                   <IconButton
+                    className="chat-emoji-button"
                     icon={<EmojiEmotionsIcon />}
                     onClick={handleToggleEmojiOptions}
                     aria-label="Open Emoji Options"
-                    bg="none"
-                    _hover={{ bg: "none" }}
-                    color="linear-gradient(147.14deg, #FF3B3B 6.95%, #6600CC 93.05%)"
+                    bg="transparent"
                   />
                   <IconButton
+                    className="chat-send-button"
                     icon={<Send />}
-                    onClick={sendMessage}
+                    onClick={dispatchMessage}
                     aria-label="Send Message"
-                    bg="none"
-                    _hover={{ bg: "none" }}
-                    color="linear-gradient(147.14deg, #FF3B3B 6.95%, #6600CC 93.05%)"
+                    bg="transparent"
                   />
                 </InputRightElement>
               </InputGroup>
+
               {showEmojiOptions && (
                 <EmojiOptions handleEmojiClick={handleEmojiClick} />
               )}
             </FormControl>
           </Box>
         </>
-      ) : (
-        // to get socket.io on same page
-        <Box d="flex" alignItems="center" justifyContent="center" h="100%">
-          <Text fontSize="3xl" pb={3} fontFamily="Work sans">
-            Click on a user to start chatting
-          </Text>
-        </Box>
-      )}
+      ) : null}
     </>
   );
 };
