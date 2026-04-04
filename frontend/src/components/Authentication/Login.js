@@ -17,94 +17,25 @@ import { useToast } from "@chakra-ui/react";
 import { useHistory, Link } from "react-router-dom";
 import { ChatState } from "../../Context/ChatProvider";
 import Loader from "../layouts/Loader";
-const Login = () => {
-  const classes = useStyles();
-  const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isValidEmail, setIsValidEmail] = useState(true);
-  // const [loading, setLoading] = useState(false);
-  const toast = useToast();
-  const history = useHistory();
-  const { isAuth, setIsAuth, setUser } = ChatState();
-  const heroHighlights = [
-    "Real-time conversations with collaborators",
-    "End-to-end encryption on every message",
-    "Custom channels and smart notifications"
-  ];
-  const handleEmailChange = (event) => {
-    const newEmail = event.target.value;
-    setEmail(newEmail);
-    setIsValidEmail(
-      newEmail !== "" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)
-    );
-  };
 
-  const handlePasswordChange = (event) => {
-    setPassword(event.target.value);
-  };
+const heroHighlights = [
+  "Real-time conversations with collaborators",
+  "End-to-end encryption on every message",
+  "Custom channels and smart notifications",
+];
 
-  const handleShowPasswordClick = () => {
-    setShowPassword(!showPassword);
-  };
-
-  const isSignInDisabled = !(email && password && isValidEmail);
-
-  const submitHandler = async () => {
-    setIsAuth(true);
-    if (!email || !password) {
-      toast({
-        title: "Please Fill all the Feilds",
-        status: "warning",
-        duration: 5000,
-        isClosable: true,
-        position: "bottom",
-      });
-      // setLoading(false);
-      return;
-    }
-
-    // console.log(email, password);
-    try {
-      const config = {
-        headers: {
-          "Content-type": "application/json",
-        },
-      };
-
-      const { data } = await axios.post("/api/user/login",
-        { email, password },
-        config
-      );
-
-      toast({
-        title: "Login Successful",
-        status: "success",
-        duration: 5000,
-        isClosable: true,
-        position: "bottom",
-      });
-      localStorage.setItem("userInfo", JSON.stringify(data));
-      setUser(data);
-      setTimeout(() => {
-        setIsAuth(false);
-        history.push("/chats");
-      }, 2000);
-    } catch (error) {
-      setIsAuth(false);
-      toast({
-        title: "Error Occured!",
-        description: error.response.statusText,
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-        position: "bottom",
-      });
-      // setLoading(false);
-    }
-  };
-
-  const LoginPageContent = () => (
+const LoginPageContent = ({
+  classes,
+  email,
+  handleEmailChange,
+  isValidEmail,
+  password,
+  handlePasswordChange,
+  showPassword,
+  handleShowPasswordClick,
+  isSignInDisabled,
+  submitHandler,
+}) => (
   <div className={classes.authWrapper}>
     <div className={classes.heroSection}>
       <span className={classes.heroBadge}>LetsChat Pro</span>
@@ -153,9 +84,7 @@ const Login = () => {
             value={email}
             onChange={handleEmailChange}
             error={!isValidEmail}
-            helperText={
-              !isValidEmail && "Please enter a valid email address."
-            }
+            helperText={!isValidEmail && "Please enter a valid email address."}
           />
           <TextField
             label="Password"
@@ -214,13 +143,107 @@ const Login = () => {
   </div>
 );
 
+const Login = () => {
+  const classes = useStyles();
+  const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isValidEmail, setIsValidEmail] = useState(true);
+  // const [loading, setLoading] = useState(false);
+  const toast = useToast();
+  const history = useHistory();
+  const { isAuth, setIsAuth, setUser } = ChatState();
+  const handleEmailChange = (event) => {
+    const newEmail = event.target.value;
+    setEmail(newEmail);
+    setIsValidEmail(
+      newEmail !== "" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)
+    );
+  };
+
+  const handlePasswordChange = (event) => {
+    setPassword(event.target.value);
+  };
+
+  const handleShowPasswordClick = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const isSignInDisabled = !(email && password && isValidEmail);
+
+  const submitHandler = async () => {
+    setIsAuth(true);
+    if (!email || !password) {
+      toast({
+        title: "Please Fill all the Feilds",
+        status: "warning",
+        duration: 5000,
+        isClosable: true,
+        position: "bottom",
+      });
+      // setLoading(false);
+      return;
+    }
+
+    // console.log(email, password);
+    try {
+      const config = {
+        headers: {
+          "Content-type": "application/json",
+        },
+      };
+
+      const { data } = await axios.post(
+        "/api/user/login",
+        { email, password },
+        config
+      );
+
+      toast({
+        title: "Login Successful",
+        status: "success",
+        duration: 5000,
+        isClosable: true,
+        position: "bottom",
+      });
+      localStorage.setItem("userInfo", JSON.stringify(data));
+      setUser(data);
+      setTimeout(() => {
+        setIsAuth(false);
+        history.push("/chats");
+      }, 2000);
+    } catch (error) {
+      setIsAuth(false);
+      toast({
+        title: "Error Occured!",
+        description: error.response.statusText,
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+        position: "bottom",
+      });
+      // setLoading(false);
+    }
+  };
+
   return (
     <>
       {isAuth ? (
         <Loader />
       ) : (
         <div className={classes.formContainer}>
-          <LoginPageContent />
+          <LoginPageContent
+            classes={classes}
+            email={email}
+            handleEmailChange={handleEmailChange}
+            isValidEmail={isValidEmail}
+            password={password}
+            handlePasswordChange={handlePasswordChange}
+            showPassword={showPassword}
+            handleShowPasswordClick={handleShowPasswordClick}
+            isSignInDisabled={isSignInDisabled}
+            submitHandler={submitHandler}
+          />
         </div>
       )}
     </>

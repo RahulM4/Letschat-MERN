@@ -160,14 +160,11 @@ function SideDrawer({ fetchAgain }) {
                 <BellIcon color="rgba(240,242,255,0.6)" fontSize="16px" />
               </Box>
             </MenuButton>
-            <MenuList
-              bg="#1e2130"
-              border="1px solid rgba(255,255,255,0.08)"
-              borderRadius="14px"
-              boxShadow="0 24px 48px rgba(0,0,0,0.5)"
-              p="8px"
-              minW="250px"
-            >
+          <MenuList
+            className="notifications-menu"
+            minW="250px"
+            zIndex={1400}
+          >
               {!notification.length && (
                 <MenuItem bg="transparent" color="rgba(240,242,255,0.45)" fontSize="0.85rem" _hover={{ bg: "rgba(255,255,255,0.04)" }} borderRadius="8px">
                   No new messages
@@ -184,7 +181,7 @@ function SideDrawer({ fetchAgain }) {
                   onClick={async () => {
                     setSelectedChat(notif.chat);
                     setNotification(notification.filter((n) => n !== notif));
-                    try { await axios.delete(`/api/notification/${notif._id}`); } catch {}
+                    try { await axios.delete(`/api/notification/${notif._id}`); } catch { }
                     onNotifClose();
                   }}
                 >
@@ -219,14 +216,11 @@ function SideDrawer({ fetchAgain }) {
               <ChevronDownIcon color="rgba(240,242,255,0.4)" fontSize="12px" />
             </MenuButton>
 
-            <MenuList
-              bg="#1e2130"
-              border="1px solid rgba(255,255,255,0.08)"
-              borderRadius="16px"
-              boxShadow="0 24px 48px rgba(0,0,0,0.5)"
-              p="8px"
-              minW="230px"
-            >
+          <MenuList
+            className="profile-menu-list"
+            minW="230px"
+            zIndex={1400}
+          >
               <Box px="12px" py="14px" bg="rgba(255,255,255,0.03)" borderRadius="10px" mb="8px">
                 <Flex alignItems="center" gap="12px">
                   <Avatar size="md" name={user.name} src={user.pic} border="2px solid rgba(0,212,216,0.4)" />
@@ -239,20 +233,28 @@ function SideDrawer({ fetchAgain }) {
               </Box>
               <MenuDivider borderColor="rgba(255,255,255,0.06)" />
               <ProfileModal user={user}>
-                <MenuItem bg="transparent" color="rgba(240,242,255,0.75)" fontSize="0.85rem" borderRadius="8px" _hover={{ bg: "rgba(255,255,255,0.06)", color: "#f0f2ff" }}>
-                  <EditIcon mr="8px" boxSize="14px" /> Profile
-                </MenuItem>
-              </ProfileModal>
-              <MenuItem bg="transparent" color="rgba(240,242,255,0.75)" fontSize="0.85rem" borderRadius="8px" _hover={{ bg: "rgba(255,100,100,0.1)", color: "#ff8080" }} onClick={logoutHandler}>
-                <ExternalLinkIcon mr="8px" boxSize="14px" /> Logout
+                <MenuItem
+                  bg="transparent"
+                  color="rgba(240,242,255,0.75)"
+                  fontSize="0.85rem"
+                  borderRadius="8px"
+                  _hover={{ bg: "rgba(255,255,255,0.06)", color: "#f0f2ff" }}
+                  _focus={{ bg: "rgba(255,255,255,0.06)", color: "#f0f2ff" }}
+                  _active={{ bg: "rgba(255,255,255,0.06)", color: "#f0f2ff" }}
+                >
+                <EditIcon mr="8px" boxSize="14px" /> Profile
               </MenuItem>
-            </MenuList>
-          </Menu>
-        </Flex>
-      </Box>
+            </ProfileModal>
+            <MenuItem bg="transparent" color="rgba(240,242,255,0.75)" fontSize="0.85rem" borderRadius="8px" _hover={{ bg: "rgba(255,100,100,0.1)", color: "#ff8080" }} onClick={logoutHandler}>
+              <ExternalLinkIcon mr="8px" boxSize="14px" /> Logout
+            </MenuItem>
+          </MenuList>
+        </Menu>
+      </Flex>
+    </Box >
 
-      {/* SEARCH DRAWER */}
-      <Drawer placement="left" onClose={onClose} isOpen={isOpen}>
+      {/* SEARCH DRAWER */ }
+      <Drawer Drawer placement = "left" onClose = { onClose } isOpen = { isOpen } >
         <DrawerOverlay bg="rgba(0,0,0,0.6)" backdropFilter="blur(8px)" />
         <DrawerContent bg="#13151f" color="#f0f2ff" borderRight="1px solid rgba(255,255,255,0.07)" maxW="320px">
           <DrawerHeader
@@ -304,7 +306,7 @@ function SideDrawer({ fetchAgain }) {
             {loadingChat && <Spinner ml="auto" display="flex" color="#00d4d8" />}
           </DrawerBody>
         </DrawerContent>
-      </Drawer>
+      </Drawer >
     </>
   );
 }

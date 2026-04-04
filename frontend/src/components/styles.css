@@ -317,12 +317,23 @@
 
 /* ─── MODALS ─── */
 .notifications-menu,
-.profile-menu-list {
-  background: #13151f !important;
-  border: 1px solid rgba(255,255,255,0.08) !important;
-  border-radius: 14px !important;
-  box-shadow: 0 24px 48px rgba(0,0,0,0.5) !important;
-  padding: 6px !important;
+.profile-menu-list,
+.chakra-menu__menu-list {
+  background: rgba(19, 21, 31, 0.9) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.55) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  color: #f0f2ff !important;
+  padding: 8px !important;
+}
+
+.notifications-menu .chakra-menu__menu-item,
+.profile-menu-list .chakra-menu__menu-item,
+.chakra-menu__menu-list .chakra-menu__menu-item {
+  background: transparent !important;
+  color: #f0f2ff !important;
 }
 
 /* ─── RESPONSIVE ─── */

@@ -24,3 +24,8 @@
 }
 
 .topbar-right { display: flex; align-items: center; gap: 6px; }
+
+
+.menu-item {
+  color: #e5e7eb5a; 
+}
